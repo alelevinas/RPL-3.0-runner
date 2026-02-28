@@ -9,6 +9,9 @@ import requests
 
 from config import URL_RPL_BACKEND, API_KEY
 
+import os
+URL_RUNNER = os.environ.get("URL_RUNNER", "http://runner:8000")
+
 
 def main():
     ejecutar(
@@ -173,7 +176,7 @@ def __post_to_runner(submission_tar_path, activity_compilation_flags, lang, test
     with open(submission_tar_path, "rb") as sub_tar:
         print("POSTing submission to runner server")
         response = requests.post(
-            "http://runner:8000/",
+            f"{URL_RUNNER}/",
             files={
                 "file": ("submissionRECEIVED.tar", sub_tar),
                 "cflags": (None, activity_compilation_flags),
