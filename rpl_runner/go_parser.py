@@ -38,4 +38,5 @@ def main():
     with open("unit_test_results_output.json", "w") as of:
         of.write(json.dumps(result, indent=4))
 
-main()
+if __name__ == "__main__":
+    main()
