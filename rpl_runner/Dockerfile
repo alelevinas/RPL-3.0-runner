@@ -1,27 +1,19 @@
-FROM ubuntu:jammy
+FROM ubuntu:noble
 
 RUN apt-get update     && \
     apt-get upgrade -y && \
     apt-get install -y gcc gcc-multilib g++ clang      	\
-    make valgrind time python3.10 	\
-    python3.10-dev libgtest-dev       \
-    python3-pip git curl
+    make valgrind time python3 	\
+    python3-dev libgtest-dev       \
+    python3-pip python3-venv git curl wget
 
-# Fix for installing flask in ubuntu:bionic
-RUN apt-get install -y python3-markupsafe
-
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
-
-RUN pip3 install timeout-decorator
-RUN pip3 install flask gunicorn
-RUN pip3 install pulp
+RUN pip3 install --break-system-packages timeout-decorator flask gunicorn pulp
 
 # Install go
-RUN apt-get install -y wget
-RUN wget https://go.dev/dl/go1.19.3.linux-amd64.tar.gz
-RUN tar -xvf go1.19.3.linux-amd64.tar.gz
-RUN mv go /usr/lib
+RUN wget -q https://go.dev/dl/go1.22.5.linux-amd64.tar.gz && \
+    tar -xf go1.22.5.linux-amd64.tar.gz && \
+    mv go /usr/lib && \
+    rm go1.22.5.linux-amd64.tar.gz
 
 ENV GOROOT /usr/lib/go
 ENV GOCACHE /go/cache
