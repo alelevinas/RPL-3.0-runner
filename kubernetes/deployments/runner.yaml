@@ -25,7 +25,7 @@ spec:
         value: preemptive
       containers:
       - name: runner
-        image: gcr.io/rpl2-fiuba/rpl-3.0-runner:latest
+        image: ghcr.io/rpl-3-0/rpl-3.0-runner:latest
         ports:
           - name: http
             containerPort: 8000
@@ -43,7 +43,7 @@ spec:
             path: /health
             port: 8000
       - name: worker
-        image: gcr.io/rpl2-fiuba/rpl-3.0-worker:latest
+        image: ghcr.io/rpl-3-0/rpl-3.0-worker:latest
         env:
         - name: QUEUE_URL
           value: "amqp://guest:guest@queue:5672"
