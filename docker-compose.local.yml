@@ -1,9 +1,11 @@
 services:
-  queue_reveicer:
+  queue_receiver:
     build:
       context: .
       dockerfile: ./Dockerfile
     restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       QUEUE_URL: amqp://local_queue:5672
       URL_RPL_BACKEND: http://activities_api:80

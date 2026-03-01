@@ -10,4 +10,4 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY . ./
 
-ENTRYPOINT ["python3", "rabbitmq_receive.py"]
+ENTRYPOINT ["celery", "-A", "celery_app", "worker", "--loglevel=info", "-c", "4"]

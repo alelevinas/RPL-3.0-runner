@@ -12,7 +12,7 @@ from rust_runner import RustRunner
 from runner import RunnerError, TimeOutError
 from logger import get_logger
 
-LOG = get_logger("RPL-2.0-worker-init")
+LOG = get_logger("RPL-3.0-worker-init")
 
 custom_runners = {
     "c_std11": CRunner,

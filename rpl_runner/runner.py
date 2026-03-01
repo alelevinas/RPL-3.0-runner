@@ -234,7 +234,7 @@ class Runner:
 def get_logger(stdout):
     import logging
 
-    logger = logging.getLogger("RPL-2.0")
+    logger = logging.getLogger("RPL-3.0")
     handler = logging.StreamHandler(stdout)
     formatter = logging.Formatter("%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
     handler.setFormatter(formatter)
