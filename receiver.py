@@ -21,6 +21,18 @@ URL_RUNNER = os.environ.get("URL_RUNNER", "http://runner:8000")
 
 # ... rest of the file ...
 
+def get_unit_test_extension(lang):
+    if "python" in lang:
+        return "py"
+    if "java" in lang:
+        return "java"
+    if "go" in lang:
+        return "go"
+    if "rust" in lang:
+        return "rs"
+    return "c"
+
+
 def ejecutar(submission_id, lang="c_std11", runner_url=None):
     """
     Función principal del script.
@@ -29,7 +41,31 @@ def ejecutar(submission_id, lang="c_std11", runner_url=None):
         runner_url = URL_RUNNER
 
     with tempfile.TemporaryDirectory(prefix="corrector.") as tmpdir:
-        # ...
+        submission_metadata = __get_submission_metadata(submission_id)
+        if not submission_metadata:
+            logger.error(f"Submission {submission_id} not found")
+            return
+
+        submission_rplfile_id = submission_metadata["submission_rplfile_id"]
+        activity_unit_tests_content = submission_metadata["activity_unit_tests_content"]
+        activity_io_tests_input = submission_metadata["activity_io_tests_input"]
+        activity_compilation_flags = submission_metadata.get("compilation_flags", "")
+        test_mode = "IO" if submission_metadata["is_io_tested"] else "unit_test"
+
+        submission_rplfile_path = os.path.join(tmpdir, "submission.tar.gz")
+        __get_rplfile(submission_rplfile_id, submission_rplfile_path)
+
+        __update_submission_status(submission_id, "PROCESSING")
+
+        submission_tar_path = os.path.join(tmpdir, "submission_for_runner.tar")
+        __create_submission_tar_for_runner(
+            submission_tar_path,
+            submission_rplfile_path,
+            activity_unit_tests_content,
+            activity_io_tests_input,
+            lang
+        )
+
         execution_results = __post_to_runner(
             submission_tar_path,
             activity_compilation_flags,
@@ -38,7 +74,7 @@ def ejecutar(submission_id, lang="c_std11", runner_url=None):
             runner_url
         )
 
-        logger.info(f"Execution result for submission {submission_id}", extra={"results": execution_results})
+        logger.info(f"Execution result for submission {submission_id}")
 
         __post_exec_log(submission_id, execution_results)
 

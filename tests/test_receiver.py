@@ -188,7 +188,7 @@ class TestPostToRunner:
             tar_path = f.name
 
         try:
-            result = _post_to_runner(tar_path, "-Wall", "c_std11", "unit_test")
+            result = _post_to_runner(tar_path, "-Wall", "c_std11", "unit_test", "http://localhost:8000")
             assert result == expected
         finally:
             os.unlink(tar_path)
