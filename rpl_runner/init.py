@@ -12,6 +12,11 @@ from rust_runner import RustRunner
 from runner import RunnerError, TimeOutError
 from logger import get_logger
 
+# Add shared to sys.path
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from shared.enums import TestsExecutionResultStatus
+from shared.dtos import TestsExecutionLogDTO, UnitTestSuiteRunsSummaryDTO, SingleUnitTestRunReportDTO
+
 LOG = get_logger("RPL-3.0-worker-init")
 
 custom_runners = {
@@ -82,42 +87,54 @@ def process(lang, test_mode, filename, cflags=""):
             LOG.info("Running custom runner")
             test_runner = custom_runners[lang](tmpdir, test_mode, my_stdout, my_stderr)
             LOG.info("Custom runner ran succesfully")
-            result = {}
+            
+            result_data = {
+                "tests_execution_result_status": TestsExecutionResultStatus.SUCCESS,
+                "tests_execution_stage": "COMPLETE",
+                "tests_execution_exit_message": "Completed all stages",
+                "tests_execution_stderr": "",
+                "tests_execution_stdout": ""
+            }
+
             try:
                 # Comenzamos la corrida
                 test_runner.process()  # writes stuff to my_stdout and my_stderr
-                result["tests_execution_result_status"] = "OK"
-                result["tests_execution_stage"] = "COMPLETE"
-                result["tests_execution_exit_message"] = "Completed all stages"
             except TimeOutError as e:
-                result["tests_execution_result_status"] = "TIME_OUT"
-                result["tests_execution_stage"] = e.stage
-                result["tests_execution_exit_message"] = e.message
+                result_data["tests_execution_result_status"] = TestsExecutionResultStatus.TIME_OUT
+                result_data["tests_execution_stage"] = e.stage
+                result_data["tests_execution_exit_message"] = e.message
             except RunnerError as e:
-                result["tests_execution_result_status"] = "ERROR"
-                result["tests_execution_stage"] = e.stage
-                result["tests_execution_exit_message"] = e.message
+                result_data["tests_execution_result_status"] = TestsExecutionResultStatus.ERROR
+                result_data["tests_execution_stage"] = e.stage
+                result_data["tests_execution_exit_message"] = e.message
                 LOG.error("HUBO ERRORES: {message} en la etapa de {stage}".format(message=e.message, stage=e.stage))
             except Exception as e:
-                result["tests_execution_result_status"] = "UNKNOWN_ERROR"
-                result["tests_execution_stage"] = "unknown"
-                result["tests_execution_exit_message"] = str(e)
+                result_data["tests_execution_result_status"] = TestsExecutionResultStatus.ERROR
+                result_data["tests_execution_stage"] = "unknown"
+                result_data["tests_execution_exit_message"] = str(e)
                 raise e
-            # Get criterion unit tests results
-            if test_mode == "unit_test" and result["tests_execution_stage"] == "COMPLETE":
-                result["unit_test_suite_result_summary"] = get_unit_test_results(
-                    tmpdir, lang
-                )
-            else:
-                result["unit_test_suite_result_summary"] = None  # Nice To have for debbuging
+
             my_stdout.seek(0)
             my_stderr.seek(0)
-            result["tests_execution_stdout"] = my_stdout.read(9999)  # we can only store up to 10k chars in the column
-            result["tests_execution_stderr"] = my_stderr.read(9999)
-            sanitize_rust_stderr(lang, result)
-            result["all_student_only_outputs_from_iotests_runs"] = parse_student_only_outputs_from_runs(result["tests_execution_stdout"])
-            LOG.info(json.dumps(result, indent=4))
-            return result
+            result_data["tests_execution_stdout"] = my_stdout.read(9999)
+            result_data["tests_execution_stderr"] = my_stderr.read(9999)
+            sanitize_rust_stderr(lang, result_data)
+            
+            # Get criterion unit tests results
+            unit_test_summary = None
+            if test_mode == "unit_test" and result_data["tests_execution_stage"] == "COMPLETE":
+                summary_data = get_unit_test_results(tmpdir, lang)
+                if summary_data:
+                    unit_test_summary = UnitTestSuiteRunsSummaryDTO(**summary_data)
+            
+            result_data["unit_test_suite_result_summary"] = unit_test_summary
+            result_data["all_student_only_outputs_from_iotests_runs"] = parse_student_only_outputs_from_runs(result_data["tests_execution_stdout"])
+            
+            # Create the final DTO
+            final_result = TestsExecutionLogDTO(**result_data)
+            
+            LOG.info(final_result.model_dump_json(indent=4))
+            return final_result.model_dump()
 
 
 

@@ -5,7 +5,8 @@ RUN apt-get update     && \
     apt-get install -y gcc gcc-multilib g++ clang      	\
     make valgrind time python3 	\
     python3-dev libgtest-dev       \
-    python3-pip python3-venv git curl wget
+    python3-pip python3-venv git curl wget \
+    cppcheck pylint
 
 RUN pip3 install --break-system-packages timeout-decorator flask gunicorn pulp
 

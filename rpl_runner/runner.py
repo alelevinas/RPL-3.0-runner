@@ -39,12 +39,23 @@ class Runner:
         """
         Only public function. Does all the work.
         - generate_files must be implemented by a custom runner extending this class.
-        - Build depends onthe custom runner's generated Makefile and executes 'make -k build'
+        - Lint runs static analysis tools.
+        - Build depends on the custom runner's generated Makefile and executes 'make -k build'
         - Run command just executes 'make -k run' and pipes the input files in case it IO tested
         """
         self.generate_files()
+        try:
+            self.lint()
+        except Exception as e:
+            self.logger.warning(f"Static analysis failed: {e}")
         self.build()
         return self.run()
+
+    def lint(self):
+        """
+        Static analysis phase. Should be implemented by child classes.
+        """
+        pass
 
     def exec_cmd(self, cmd, timeout):
         """

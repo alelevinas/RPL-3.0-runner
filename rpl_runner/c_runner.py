@@ -12,6 +12,20 @@ class CRunner(Runner):
     def generate_files(self):
         shutil.copy("/c_Makefile", self.path + "/Makefile")
 
+    def lint(self):
+        self.stage = "LINT"
+        self.logger.info("Static Analysis Started (cppcheck)")
+        # Run cppcheck on all .c files in the path
+        cmd = ["cppcheck", "--enable=all", "--suppress=missingIncludeSystem", "."]
+        self.exec_cmd(("cppcheck", subprocess.Popen(
+            cmd,
+            cwd=self.path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )), timeout=10)
+        self.logger.info("Static Analysis Ended")
+
     def build_cmd(self):
         if self.test_type == "IO":
             return (

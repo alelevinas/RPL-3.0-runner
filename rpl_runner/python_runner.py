@@ -1,6 +1,7 @@
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 from runner import Runner, RunnerError
 
@@ -18,6 +19,24 @@ class PythonRunner(Runner):
             shutil.copy(
                 "/usr/custom_IO_main.py", self.path + "/custom_IO_main.py"
             )
+
+    def lint(self):
+        self.stage = "LINT"
+        self.logger.info("Static Analysis Started (pylint)")
+        # Find all .py files in path
+        py_files = [str(p) for p in Path(self.path).glob("*.py")]
+        if not py_files:
+            return
+            
+        cmd = ["pylint", "--disable=all", "--enable=E,W,R", "--exit-zero"] + py_files
+        self.exec_cmd(("pylint", subprocess.Popen(
+            cmd,
+            cwd=self.path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )), timeout=10)
+        self.logger.info("Static Analysis Ended")
 
     def build_cmd(self):
         """
