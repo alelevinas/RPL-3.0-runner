@@ -23,7 +23,7 @@ run_unit_test:
 	@echo "cargo nextest run --offline --locked --test unit_test"
 	@-cargo nextest run --config-file nextest.toml --offline --locked --test-threads 1 --test unit_test > /dev/null 2>&1
 	@mv ./target/nextest/default/rust_junit.xml rust_junit.xml
-	@python rust_parser.py
+	@python3 rust_parser.py
 	@cargo clean --offline --locked --quiet
 	@rm -f $(ARCHIVOS_SRC) $(ARCHIVOS_TESTS)
 

@@ -21,6 +21,6 @@ build_unit_test:
 	@rm ${ARCHIVOS}
 
 run_unit_test:
-	./main -test.v | python go_parser.py
+	./main -test.v | python3 go_parser.py
 
 .PHONY: main clean
