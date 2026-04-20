@@ -42,4 +42,4 @@ jobs:
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             rpl-runner:ci \
-            -c "pip install --break-system-packages pytest pytest-mock && pytest -m integration -v"
+            -c "pip install --break-system-packages pytest pytest-mock && python -m pytest -m integration -v"
