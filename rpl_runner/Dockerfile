@@ -8,7 +8,8 @@ RUN apt-get update     && \
     python3-pip python3-venv git curl wget \
     cppcheck pylint
 
-RUN pip3 install --break-system-packages timeout-decorator flask gunicorn pulp
+RUN pip3 install --break-system-packages timeout-decorator flask gunicorn pulp && \
+    pip3 install --break-system-packages --ignore-installed pydantic
 
 # Install go
 RUN wget -q https://go.dev/dl/go1.22.5.linux-amd64.tar.gz && \
@@ -65,6 +66,7 @@ COPY ["Cargo.toml", "Cargo.lock", "/home/runner/.aux_config_cargo/"]
 
 
 COPY ["*.py", "*_Makefile", "/"]
+COPY shared/ /shared/
 
 RUN chown -R runner:runner /home/runner
 RUN chown -R runner:runner /go
