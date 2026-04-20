@@ -112,7 +112,6 @@ def process(lang, test_mode, filename, cflags=""):
                 result_data["tests_execution_result_status"] = TestsExecutionResultStatus.ERROR
                 result_data["tests_execution_stage"] = "unknown"
                 result_data["tests_execution_exit_message"] = str(e)
-                raise e
 
             my_stdout.seek(0)
             my_stderr.seek(0)
@@ -187,11 +186,12 @@ def get_unit_test_results(tmpdir, lang):
 def get_custom_unit_test_results_json(criterion_json):
     parsed_json = json.loads(str(criterion_json))
     result = {}
-    if parsed_json["test_suites"] and len(parsed_json["test_suites"]) > 0:
-        result["amount_passed"] = parsed_json["passed"]
-        result["amount_failed"] = parsed_json["failed"]
-        result["amount_errored"] = parsed_json["errored"]
-        result["single_test_reports"] = parsed_json["test_suites"][0]["tests"]
+    if not parsed_json.get("test_suites"):
+        return result
+    result["amount_passed"] = parsed_json["passed"]
+    result["amount_failed"] = parsed_json["failed"]
+    result["amount_errored"] = parsed_json["errored"]
+    result["single_test_reports"] = parsed_json["test_suites"][0]["tests"]
 
     for i in range(len(result["single_test_reports"])):
         if result["single_test_reports"][i]["status"] in ["FAILED", "ERRORED"]:

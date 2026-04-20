@@ -3,10 +3,11 @@ CC := gcc
 VALGRIND = valgrind --leak-check=full --track-origins=yes --show-reachable=yes --error-exitcode=2
 ARCHIVOS = $(wildcard *.c)
 ARCHIVOS_SIN_UNIT_TEST := $(filter-out unit_test.c, $(ARCHIVOS))
+ARCHIVOS_PARA_UNIT_TEST := $(filter-out main.c, $(ARCHIVOS))
 
 # Delete source files so students can't read and print test cases
 # @ --> don't print command to stdout
-build: $(ARCHIVOS:.c=.o)
+build: $(ARCHIVOS_SIN_UNIT_TEST:.c=.o)
 	$(CC) ${CFLAGS} -o main $^ ${LDFLAGS}
 	@rm ${ARCHIVOS}
 
@@ -18,9 +19,14 @@ build_pre_unit_test: $(ARCHIVOS_SIN_UNIT_TEST)
 	$(CC) ${CFLAGS} -c $^ ${LDFLAGS}
 
 
+# unit_test.c typically #includes main.c, so rename student main() to avoid
+# overriding criterion's main() from -lcriterion (object files win over shared libs)
+unit_test.o: unit_test.c
+	$(CC) ${CFLAGS} -Dmain=__student_main -c unit_test.c -o unit_test.o
+
 # Build with criterion lib and delete source files so students can't read and print test cases
 # @ --> don't print command to stdout
-build_unit_test: $(ARCHIVOS:.c=.o)
+build_unit_test: $(ARCHIVOS_PARA_UNIT_TEST:.c=.o)
 	$(CC) ${CFLAGS} -o main $^ ${LDFLAGS} -lcriterion
 	@rm ${ARCHIVOS}
 
