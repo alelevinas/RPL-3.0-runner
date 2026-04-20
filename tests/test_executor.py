@@ -1,4 +1,4 @@
-"""Tests for rpl_runner/ executor code — parsers, init.py helpers, and Flask server."""
+"""Tests for runner_server/ executor code — parsers, executor.py helpers, and Flask server."""
 
 import io
 import json
@@ -8,15 +8,15 @@ import textwrap
 
 import pytest
 
-# These imports work because conftest.py adds rpl_runner/ to sys.path
-from init import (
+# These imports work because conftest.py adds runner_server/ and its subdirs to sys.path
+from executor import (
     parse_student_only_outputs_from_runs,
     get_custom_unit_test_results_json,
     sanitize_rust_stderr,
 )
 import go_parser
 import rust_parser
-import init_server
+import server as init_server
 
 
 # ---------------------------------------------------------------------------
@@ -295,3 +295,130 @@ class TestFlaskServer:
         data = {"file": (io.BytesIO(b""), "")}
         response = client.post("/", data=data, content_type="multipart/form-data")
         assert response.status_code == 302
+
+
+# ---------------------------------------------------------------------------
+# get_custom_unit_test_results_json — additional edge cases
+# ---------------------------------------------------------------------------
+
+class TestCriterionParserEdgeCases:
+    def test_empty_test_suites_returns_empty_dict(self):
+        criterion_output = json.dumps({
+            "passed": 0, "failed": 0, "errored": 0,
+            "test_suites": []
+        })
+        result = get_custom_unit_test_results_json(criterion_output)
+        assert result == {}
+
+    def test_missing_test_suites_key_returns_empty_dict(self):
+        criterion_output = json.dumps({"passed": 0, "failed": 0, "errored": 0})
+        result = get_custom_unit_test_results_json(criterion_output)
+        assert result == {}
+
+    def test_errored_test_messages_joined(self):
+        criterion_output = json.dumps({
+            "passed": 0, "failed": 0, "errored": 1,
+            "test_suites": [{
+                "tests": [
+                    {"name": "test_crash", "status": "ERRORED", "messages": ["line1", "line2"]},
+                ]
+            }]
+        })
+        result = get_custom_unit_test_results_json(criterion_output)
+        assert result["single_test_reports"][0]["messages"] == "line1;    line2"
+
+    def test_passed_test_messages_not_joined(self):
+        criterion_output = json.dumps({
+            "passed": 1, "failed": 0, "errored": 0,
+            "test_suites": [{
+                "tests": [
+                    {"name": "test_ok", "status": "PASSED", "messages": []},
+                ]
+            }]
+        })
+        result = get_custom_unit_test_results_json(criterion_output)
+        assert result["single_test_reports"][0]["messages"] == []
+
+
+# ---------------------------------------------------------------------------
+# parse_student_only_outputs_from_runs — additional edge cases
+# ---------------------------------------------------------------------------
+
+class TestParseStudentOutputsEdgeCases:
+    def test_skips_assignment_main_py_noise(self):
+        log = "start_RUN\nassignment_main.py\nHello\nend_RUN\n"
+        result = parse_student_only_outputs_from_runs(log)
+        assert result == ["Hello"]
+
+    def test_skips_custom_io_main_pyc_noise(self):
+        log = "start_RUN\ncustom_IO_main.pyc\nHello\nend_RUN\n"
+        result = parse_student_only_outputs_from_runs(log)
+        assert result == ["Hello"]
+
+    def test_skips_target_release_noise(self):
+        log = "start_RUN\n./target/release/student_package\nHello\nend_RUN\n"
+        result = parse_student_only_outputs_from_runs(log)
+        assert result == ["Hello"]
+
+    def test_trailing_newline_stripped(self):
+        log = "start_RUN\nHello\n\nend_RUN\n"
+        result = parse_student_only_outputs_from_runs(log)
+        assert result[0].endswith("Hello\n")
+
+    def test_nested_delimiter_names_in_output_ignored(self):
+        log = "start_RUN\nstart_BUILD\nend_RUN\n"
+        result = parse_student_only_outputs_from_runs(log)
+        assert result == ["start_BUILD"]
+
+
+# ---------------------------------------------------------------------------
+# get_unit_test_results — reads real JSON file from tmpdir
+# ---------------------------------------------------------------------------
+
+class TestGetUnitTestResults:
+    def test_returns_none_when_file_missing(self):
+        from executor import get_unit_test_results
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = get_unit_test_results(tmpdir, "python_3.10")
+            assert result is None
+
+    def test_returns_none_on_invalid_json(self):
+        from executor import get_unit_test_results
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(os.path.join(tmpdir, "unit_test_results_output.json"), "w") as f:
+                f.write("not valid json {{{")
+            result = get_unit_test_results(tmpdir, "python_3.10")
+            assert result is None
+
+    def test_parses_python_unit_test_json(self):
+        from executor import get_unit_test_results
+        payload = json.dumps({
+            "amount_passed": 1,
+            "amount_failed": 0,
+            "amount_errored": 0,
+            "single_test_reports": [{"name": "test_foo", "status": "PASSED", "messages": None}]
+        })
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(os.path.join(tmpdir, "unit_test_results_output.json"), "w") as f:
+                f.write(payload)
+            result = get_unit_test_results(tmpdir, "python_3.10")
+            assert result["amount_passed"] == 1
+            assert result["single_test_reports"][0]["name"] == "test_foo"
+
+    def test_parses_c_criterion_json_via_custom_parser(self):
+        from executor import get_unit_test_results
+        criterion_json = json.dumps({
+            "passed": 2, "failed": 0, "errored": 0,
+            "test_suites": [{
+                "tests": [
+                    {"name": "test_a", "status": "PASSED", "messages": []},
+                    {"name": "test_b", "status": "PASSED", "messages": []},
+                ]
+            }]
+        })
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(os.path.join(tmpdir, "unit_test_results_output.json"), "w") as f:
+                f.write(criterion_json)
+            result = get_unit_test_results(tmpdir, "c_std11")
+            assert result["amount_passed"] == 2
+            assert len(result["single_test_reports"]) == 2

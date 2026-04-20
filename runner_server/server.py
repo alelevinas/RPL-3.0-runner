@@ -3,7 +3,7 @@ from flask import Flask, flash, request, redirect, url_for
 from werkzeug.utils import secure_filename
 import json
 
-from init import process
+from executor import process
 
 UPLOAD_FOLDER = '/home/runner'
 ALLOWED_EXTENSIONS = {'tar'}

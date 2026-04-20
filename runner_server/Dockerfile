@@ -29,7 +29,7 @@ RUN groupadd -g 2500 runner
 RUN useradd -m -u 98989 -g runner -s /bin/bash runner
 
 # Add runner
-ADD runner-libs/ /runner-libs/
+ADD libs/ /runner-libs/
 
 # Copy libcriterion files
 RUN tar -zxvf /runner-libs/c/criterion_rpl_v2.tar.gz -C /runner-libs/c/
@@ -65,7 +65,8 @@ COPY ["Cargo.toml", "Cargo.lock", "/home/runner/.aux_config_cargo/"]
 
 
 
-COPY ["*.py", "*_Makefile", "/"]
+COPY ["runners/*.py", "parsers/*.py", "*.py", "/"]
+COPY ["makefiles/*_Makefile", "/"]
 COPY shared/ /shared/
 
 RUN chown -R runner:runner /home/runner
@@ -75,4 +76,4 @@ ENV PYTHONUNBUFFERED=TRUE
 USER runner
 
 WORKDIR /home/runner
-ENTRYPOINT ["gunicorn", "--bind", "0.0.0.0:8000", "--chdir", "/", "--timeout", "60", "init_server:app"]
+ENTRYPOINT ["gunicorn", "--bind", "0.0.0.0:8000", "--chdir", "/", "--timeout", "60", "server:app"]

@@ -1,8 +1,8 @@
 import pytest
 import subprocess
 from unittest.mock import MagicMock, patch
-from rpl_runner.c_runner import CRunner
-from rpl_runner.python_runner import PythonRunner
+from c_runner import CRunner
+from python_runner import PythonRunner
 
 class TestLinting:
     @patch("subprocess.Popen")

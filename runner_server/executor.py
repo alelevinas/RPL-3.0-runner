@@ -85,6 +85,16 @@ def process(lang, test_mode, filename, cflags=""):
         ) as my_stderr:
             # Obtenemos el runner del lenguaje y modo seleccionado
             LOG.info("Running custom runner")
+            if lang not in custom_runners:
+                return TestsExecutionLogDTO(**{
+                    "tests_execution_result_status": TestsExecutionResultStatus.ERROR,
+                    "tests_execution_stage": "SETUP",
+                    "tests_execution_exit_message": f"Unsupported language: {lang}",
+                    "tests_execution_stderr": "",
+                    "tests_execution_stdout": "",
+                    "unit_test_suite_result_summary": None,
+                    "all_student_only_outputs_from_iotests_runs": [],
+                }).model_dump()
             test_runner = custom_runners[lang](tmpdir, test_mode, my_stdout, my_stderr)
             LOG.info("Custom runner ran succesfully")
             
