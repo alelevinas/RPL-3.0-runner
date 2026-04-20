@@ -38,7 +38,8 @@ jobs:
       - name: Run integration tests inside runner container
         run: |
           docker run --rm \
+            --entrypoint bash \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             rpl-runner:ci \
-            bash -c "pip install --break-system-packages pytest pytest-mock && pytest -m integration -v"
+            -c "pip install --break-system-packages pytest pytest-mock && pytest -m integration -v"
