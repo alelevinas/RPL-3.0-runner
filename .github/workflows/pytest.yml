@@ -1,0 +1,44 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, test/** ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: pytest -m "not integration" -v
+
+  integration:
+    name: Integration tests (Docker)
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build runner image
+        run: docker build -t rpl-runner:ci ./runner_server/
+
+      - name: Run integration tests inside runner container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            rpl-runner:ci \
+            bash -c "pip install --break-system-packages pytest pytest-mock && pytest -m integration -v"

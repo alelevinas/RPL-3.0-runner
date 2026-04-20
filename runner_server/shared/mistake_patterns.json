@@ -1,0 +1,31 @@
+[
+  {
+    "id": "c_mem_leak",
+    "language": "c_std11",
+    "pattern": "Memory Leak",
+    "hint": "Make sure to free() all pointers you malloc(). Use valgrind for more details.",
+    "category": "memory"
+  },
+  {
+    "id": "c_segfault",
+    "language": "c_std11",
+    "pattern": "Segmentation fault",
+    "hint": "You're accessing memory you don't own. Check your pointer arithmetic and NULL checks.",
+    "category": "runtime"
+  },
+  {
+    "id": "py_indent_error",
+    "language": "python_3.10",
+    "pattern": "IndentationError",
+    "hint": "Check your indentation levels. Python is sensitive to whitespace!",
+    "category": "compilation"
+  },
+  {
+    "id": "c_timeout",
+    "language": "c_std11",
+    "pattern": "Timeout",
+    "exit_code": 124,
+    "hint": "Your program took too long to execute. This might be an infinite loop.",
+    "category": "runtime"
+  }
+]

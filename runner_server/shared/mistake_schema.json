@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Mistake Patterns",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "id": { "type": "string" },
+      "language": { "enum": ["c_std11", "python_3.10", "go_1.19", "rust_1.88.0"] },
+      "pattern": { "type": "string", "description": "Regex pattern to match in stdout/stderr" },
+      "exit_code": { "type": "integer", "description": "Exit code from the Runner" },
+      "hint": { "type": "string", "description": "Student-friendly message" },
+      "category": { "enum": ["compilation", "runtime", "memory", "logic"] }
+    },
+    "required": ["id", "language", "pattern", "hint"]
+  }
+}

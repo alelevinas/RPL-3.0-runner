@@ -64,7 +64,7 @@ jobs:
             -t "$REGISTRY_HOSTNAME"/"$GKE_PROJECT"/"$RUNNER_IMAGE":latest \
             -t "$RUNNER_IMAGE":latest \
             --build-arg GITHUB_SHA="$GITHUB_SHA" \
-            --build-arg GITHUB_REF="$GITHUB_REF" ./rpl_runner
+            --build-arg GITHUB_REF="$GITHUB_REF" ./runner_server
 
       # Push the Docker image to Google Container Registry
       - name: Publish runner
